@@ -11,6 +11,7 @@ public:
 
 public:
 	Viewport(double x, double width, double y, double height);
+	void resetMatrix(double x, double width, double y, double height);
 	~Viewport();
 	Matrix4& getMatrix();
 

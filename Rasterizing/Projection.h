@@ -11,6 +11,7 @@ public:
 
 public:
 	Projection(double aspect, double fov, double near, double far);
+	void resetMatrix(double fov, double aspect, double near, double far);
 	~Projection();
 	Matrix4& getMatrix();
 
