@@ -18,6 +18,7 @@ public:
 	virtual void draw();
 	void spin(double);      // spin cube [degrees]
 	void changeCounter();
+	void rotateY(double a);
 	void translate(double, double, double);
 	void scale(double, double, double);
 	void rotate(double);

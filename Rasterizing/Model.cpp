@@ -32,6 +32,14 @@ void Model::rotate(double a)
 	rotation->makeRotateZ(a);
 	model2world = *rotation * model2world;
 }
+
+void Model::rotateY(double a)
+{
+	Matrix4 *rotation = new Matrix4();
+	rotation->makeRotateY(a);
+	model2world = *rotation * model2world;
+}
+
 void Model::scale(double x, double y, double z)
 {
 	Matrix4 *scaling = new Matrix4;
