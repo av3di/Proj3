@@ -23,6 +23,7 @@ static Camera cam;
 static Bunny hop;
 static Dragon draco;
 static int fkey = 1;
+static int shading = 0; // Default is off
 
 using namespace std;
 
@@ -57,7 +58,7 @@ void drawPoint(int x, int y, float r, float g, float b)
 	pixels[offset + 2] = b;
 }
 
-void rasterizeVertex(float x, float y, float z, Matrix4 &multm)
+void rasterizeVertex(float x, float y, float z, Matrix4 &multm, float r, float g, float b)
 {
 	Vector4 point(x, y, z, 1);
 	Vector4 newp = multm * point;
@@ -66,7 +67,7 @@ void rasterizeVertex(float x, float y, float z, Matrix4 &multm)
 	{
 		// Multiply by vp
 		newp = vp.getMatrix() * newp;
-		drawPoint(newp.getX(), newp.getY(), 1, 1, 1);
+		drawPoint(newp.getX(), newp.getY(), r, g, b);
 	}
 
 }
@@ -78,35 +79,62 @@ void rasterize()
 	Vector3 normal;
 	int count = 0;
 	Matrix4 newM;
+	Vector3 lightpoint(1, -1, 1);
+
+	PointModel *pointmodel;
+	if (fkey == 1)
+		pointmodel = &hop;
+	else
+		pointmodel = &draco;
+
 	projection.resetMatrix(60, double(window_width) / (double)window_height, 1.0, 1000.0);
 	vp.resetMatrix(0, window_width, 0, window_height);
-	if (fkey == 1)
-	{
-		newM = projection.getMatrix() * cam.getMatrix() * hop.getMatrix();
-		for (int row = 0; row < hop.xyzrows; row++)
-		{
-			Vector4 pt(hop.v_xyz[count], hop.v_xyz[count + 1], hop.v_xyz[count + 2], 1);
+	newM = projection.getMatrix() * cam.getMatrix() * pointmodel->getMatrix();
 
-			normal.setX(hop.v_xyz[count + 3]);
-			normal.setY(hop.v_xyz[count + 4]);
-			normal.setZ(hop.v_xyz[count + 5]);
-			normal.normalize();
-			rasterizeVertex(hop.v_xyz[count], hop.v_xyz[count + 1], hop.v_xyz[count + 2], newM);
-			count = count + 6;
-		}
-	}
-	else if (fkey == 2)
+	for (int row = 0; row < pointmodel->xyzrows; row++)
 	{
-		newM = projection.getMatrix() * cam.getMatrix() * draco.getMatrix();
-		for (int row = 0; row < draco.xyzrows; row++)
-		{
-			normal.setX(draco.v_xyz[count + 3]);
-			normal.setY(draco.v_xyz[count + 4]);
-			normal.setZ(draco.v_xyz[count + 5]);
-			normal.normalize();
-			rasterizeVertex(draco.v_xyz[count], draco.v_xyz[count + 1], draco.v_xyz[count + 2], newM);
-			count = count + 6;
+		Vector4 pt(pointmodel->v_xyz[count], pointmodel->v_xyz[count + 1], pointmodel->v_xyz[count + 2], 1);
+		Vector3 pointmodelpt(pointmodel->v_xyz[count], pointmodel->v_xyz[count + 1], pointmodel->v_xyz[count + 2]);
+
+		Vector3 light = lightpoint - pointmodelpt;
+		light.normalize();
+
+		Vector4 v4_light(light.getX(), light.getY(), light.getZ(), 0);
+		v4_light = projection.getMatrix() * v4_light;
+		Vector3 v3_light(v4_light.getX(), v4_light.getY(), v4_light.getZ());
+
+		normal.setX(pointmodel->v_xyz[count + 3]);
+		normal.setY(pointmodel->v_xyz[count + 4]);
+		normal.setZ(pointmodel->v_xyz[count + 5]);
+			
+		normal.normalize();
+
+		double nominator = v3_light.dot(normal);
+			
+		// Find the distance between point model point and light point
+		double distx = lightpoint.getX() - pointmodelpt.getX();
+		double disty = lightpoint.getY() - pointmodelpt.getY();
+		double distz = lightpoint.getZ() - pointmodelpt.getZ();
+		double r = sqrt(distx*distx + disty*disty + distz*distz);
+
+		double denominator = r*r*M_PI;
+
+		double result = (nominator / denominator) * 100;
+
+		Vector3 lightcolor(1, 0, 0);
+		Vector3 pointcolor(1, 1, 1);
+		Vector3 lightrgb;
+		lightcolor.scale(result);
+		lightrgb = lightcolor.cross(pointcolor);
+
+		if (shading == 1) {
+			rasterizeVertex(pointmodel->v_xyz[count], pointmodel->v_xyz[count + 1], pointmodel->v_xyz[count + 2], newM, lightrgb.getX(), lightrgb.getY(), lightrgb.getZ());
 		}
+		else {
+			rasterizeVertex(pointmodel->v_xyz[count], pointmodel->v_xyz[count + 1], pointmodel->v_xyz[count + 2], newM, 1, 1, 1);
+		}
+
+		count = count + 6;
 	}
 }
 
@@ -205,6 +233,14 @@ void keyboardCallback(unsigned char key, int, int)
 		currentM->getMatrix().makeRotateY(1.0);
 		displayCallback();
 		//currentM->reset();
+		break;
+	case '1':
+		shading = 0;
+		displayCallback();
+		break;
+	case '2':
+		shading = 1;
+		displayCallback();
 		break;
 	}
 }
