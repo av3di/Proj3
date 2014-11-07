@@ -77,9 +77,13 @@ double Vector3::length() const
 void Vector3::normalize()
 {
 	double length = this->length();
-	this->x = this->x /length;
-	this->y = this->y / length;
-	this->z = this->z / length;
+	if (length != 0)
+	{
+		this->x = this->x / length;
+		this->y = this->y / length;
+		this->z = this->z / length;
+	}
+
 }
 
 void Vector3::print(std::string comment)

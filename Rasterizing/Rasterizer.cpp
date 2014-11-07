@@ -26,6 +26,7 @@ static PointModel *pointmodel = &hop;
 static int fkey = 1;
 static int shading = 0; // Shading is off by default
 static int z_on = 0;    // Z buffering is off by default
+static int pointsize = 0; // Point size is off by default
 static float* zbuffer = new float[window_width * window_height * 3];
 
 using namespace std;
@@ -53,16 +54,23 @@ void clearBuffer()
 }
 
 // Draw a point into the frame buffer
-void drawPoint(int x, int y, float r, float g, float b)
+void drawPoint(int x, int y, float r, float g, float b, double size)
 {
-	if (x >= 0 && x < window_width && y >= 0 && y < window_height)
+	int offset = 0;
+	for (int cx = x - size; cx <= (x + size); cx++)
 	{
-		int offset = y*window_width * 3 + x * 3;
-		pixels[offset] = r;
-		pixels[offset + 1] = g;
-		pixels[offset + 2] = b;
+		for (int cy = y - size; cy <= (y + size); cy++)
+		{
+			// Get surrounding pixels
+			offset = cy*window_width * 3 + cx * 3;
+			if (offset + 2 < window_width * window_height * 3 && cx >= 0 && cx < window_width && cy >= 0 && cy < window_height)
+			{
+				pixels[offset] = r;
+				pixels[offset + 1] = g;
+				pixels[offset + 2] = b;
+			}
+		}
 	}
-
 }
 
 void rasterizeVertex(float x, float y, float z, Matrix4 &multm, float r, float g, float b)
@@ -70,6 +78,8 @@ void rasterizeVertex(float x, float y, float z, Matrix4 &multm, float r, float g
 	Vector4 point(x, y, z, 1);
 	Vector4 newp = multm * point;
 	newp.dehomogenize();
+
+	double dist = 0.0;
 	if (newp.getX() <= 1 && newp.getX() >= -1 && newp.getY() <= 1 && newp.getY() >= -1 && newp.getZ() <= 1 && newp.getZ() >= -1)
 	{
 		// Multiply by vp
@@ -83,12 +93,52 @@ void rasterizeVertex(float x, float y, float z, Matrix4 &multm, float r, float g
 			if (newp.getZ() < zbuffer[i_y*window_width * 3 + i_x * 3])
 			{
 				zbuffer[i_y*window_width * 3 + i_x * 3] = newp.getZ();
-				drawPoint(i_x, i_y, r, g, b);
+				if (pointsize != 1)  // Check if point size is on
+				{
+					drawPoint(i_x, i_y, r, g, b, 0);
+				}
+				else
+				{
+					dist = newp.getZ();
+					//cout << dist << endl;
+					if (dist >= 1.0)
+						drawPoint(i_x, i_y, r, g, b, 0);
+					else if (dist >= 0.95)
+						drawPoint(i_x, i_y, r, g, b, 1);
+					else if (dist >= 0.94)
+						drawPoint(i_x, i_y, r, g, b, 2);
+					else if (dist >= 0.93)
+						drawPoint(i_x, i_y, r, g, b, 3);
+					else if (dist >= 0.92)
+						drawPoint(i_x, i_y, r, g, b, 4);
+					else if (dist < 0.92)
+						drawPoint(i_x, i_y, r, g, b, 5);
+				}
 			}
 		}
-		else
+		else // zbuffering off
 		{
-			drawPoint(i_x, i_y, r, g, b);
+			if (pointsize != 1) // if point size is turned off
+			{
+				drawPoint(i_x, i_y, r, g, b, 0);
+			}
+			else
+			{
+				dist = newp.getZ();
+				//cout << dist << endl;
+				if (dist >= 1.0)
+					drawPoint(i_x, i_y, r, g, b, 0);
+				else if (dist >= 0.95)
+					drawPoint(i_x, i_y, r, g, b, 1);
+				else if (dist >= 0.94)
+					drawPoint(i_x, i_y, r, g, b, 2);
+				else if (dist >= 0.93)
+					drawPoint(i_x, i_y, r, g, b, 3);
+				else if (dist >= 0.92)
+					drawPoint(i_x, i_y, r, g, b, 4);
+				else if (dist < 0.92)
+					drawPoint(i_x, i_y, r, g, b, 5);
+			}
 		}
 	}
 }
@@ -154,8 +204,8 @@ void rasterize()
 
 		double result = (nominator / denominator) * 200;
 
-		Vector3 lightcolor(0.5, 0, 1);
-		Vector3 pointcolor(0.75, 1, 0);
+		Vector3 lightcolor(1.0, 0.0, 1.0);
+		Vector3 pointcolor(0.75, 0, 1);
 		Vector3 lightrgb;
 		lightcolor.scale(result);
 		lightrgb = lightcolor.cross(pointcolor);
@@ -289,6 +339,13 @@ void keyboardCallback(unsigned char key, int, int)
 			z_on = 0;
 		else
 			z_on = 1;
+		displayCallback();
+		break;
+	case '4':
+		if (pointsize == 1)
+			pointsize = 0;
+		else
+			pointsize = 1;
 		displayCallback();
 		break;
 	}

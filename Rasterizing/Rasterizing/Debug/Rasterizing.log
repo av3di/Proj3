@@ -1,4 +1,4 @@
-﻿Build started 11/7/2014 10:05:38 AM.
+﻿Build started 11/7/2014 2:30:16 PM.
      1>Project "C:\Users\Evonee\Documents\CSE 167\Project_3\Proj3\Rasterizing\Rasterizing\Rasterizing.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\glut\glut-3.7.6-bin" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\Rasterizer.cpp
@@ -22,4 +22,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:24.42
+Time Elapsed 00:00:16.45
